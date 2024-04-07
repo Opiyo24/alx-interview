@@ -1,45 +1,38 @@
 #!/usr/bin/python3
-"""Script to get stats from a request"""
+"""
+Method to determine if given data represents valid UTF-8 encoding
+Prototype: def validUTF8(data)
+Returns True if data is valid UTF-8 encoding, else return False
+Dataset can contain multiple characters
+Data will represent a list of integers
+"""
 
-import sys
 
-codes = {}
-status_codes = ['200', '301', '400', '401', '403', '404', '405', '500']
-count = 0
-size = 0
+def validUTF8(data):
+    """
+    Prototype: def validUTF8(data)
+    Returns True if data is valid UTF-8 encoding
+    else return False
+    """
+    count = 0
 
-try:
-    for ln in sys.stdin:
-        if count == 10:
-            print("File size: {}".format(size))
-            for key in sorted(codes):
-                print("{}: {}".format(key, codes[key]))
-            count = 1
+    for bit in data:
+        binary = bin(bit).replace('0b', '').rjust(8, '0')[-8:]
+        if count == 0:
+            if binary.startswith('110'):
+                count = 1
+            if binary.startswith('1110'):
+                count = 2
+            if binary.startswith('11110'):
+                count = 3
+            if binary.startswith('10'):
+                return False
         else:
-            count += 1
+            if not binary.startswith('10'):
+                return False
+            count -= 1
 
-        ln = ln.split()
+    if count != 0:
+        return False
 
-        try:
-            size = size + int(ln[-1])
-        except (IndexError, ValueError):
-            pass
-
-        try:
-            if ln[-2] in status_codes:
-                if codes.get(ln[-2], -1) == -1:
-                    codes[ln[-2]] = 1
-                else:
-                    codes[ln[-2]] += 1
-        except IndexError:
-            pass
-
-    print("File size: {}".format(size))
-    for key in sorted(codes):
-        print("{}: {}".format(key, codes[key]))
-
-except KeyboardInterrupt:
-    print("File size: {}".format(size))
-    for key in sorted(codes):
-        print("{}: {}".format(key, codes[key]))
-    raise
+    return True
